@@ -1,7 +1,7 @@
 (function (window) {
   'use strict';
 
-  var PLACEHOLDER_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
+  var PLACEHOLDER_CLIENT_ID = '318769083991-5hph7d98999ijj3br1l20p2pdd4d6but.apps.googleusercontent.com';
 
   window.CONFIG = window.CONFIG || {};
   if (!window.CONFIG.CLIENT_ID) window.CONFIG.CLIENT_ID = PLACEHOLDER_CLIENT_ID;
@@ -206,6 +206,20 @@
       });
   }
 
+  function autoRegisterGoogleUser(email, nombre) {
+    var currentData = Storage.load();
+    var newUser = {
+      id: Storage.nextId(currentData.usuarios, 1),
+      email: Storage.normalizeEmail(email),
+      nombre: Storage.sanitizeInput(nombre) || email.split('@')[0],
+      rol: 'mesero',
+      activo: true
+    };
+    currentData.usuarios.push(newUser);
+    var result = Storage.save(currentData);
+    return result.ok ? newUser : null;
+  }
+
   function buildGoogleSession(idToken, claims, profile) {
     var tokenExpiresAt = Number(claims.exp) * 1000;
     var ttlExpiresAt = Date.now() + SESSION_TTL;
@@ -223,7 +237,8 @@
       return Promise.reject(new Error('No se recibió credencial de Google.'));
     }
 
-    var localCheck = validateJwtClaims(parseJwt(credential));
+    var claims = parseJwt(credential);
+    var localCheck = validateJwtClaims(claims);
     if (!localCheck.valid) {
       return Promise.reject(new Error(localCheck.reason));
     }
@@ -236,10 +251,15 @@
 
       var usuario = findDirectoryUser(info.email);
       if (!usuario) {
-        throw new Error('La cuenta ' + info.email + ' no tiene un rol activo asignado en este sistema.');
+        var googleName = (claims && claims.name) || (info && info.name) || info.email.split('@')[0];
+        usuario = autoRegisterGoogleUser(info.email, googleName);
+        if (!usuario) {
+          throw new Error('No se pudo registrar la cuenta ' + info.email + ' en el sistema.');
+        }
       }
 
-      var session = buildGoogleSession(credential, info, toProfile(usuario, info.picture));
+      var picture = (claims && claims.picture) || (info && info.picture) || '';
+      var session = buildGoogleSession(credential, info, toProfile(usuario, picture));
       if (!saveSession(session)) {
         throw new Error('No se pudo guardar la sesión en este navegador.');
       }
