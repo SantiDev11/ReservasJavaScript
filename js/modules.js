@@ -178,7 +178,7 @@
       '<div class="card">' +
         '<div class="card-header">' +
           '<h3><i class="fas fa-info-circle"></i> Estado Operativo</h3>' +
-          '<span class="badge badge-admin">' + currentUser.rol.toUpperCase() + '</span>' +
+          '<span class="badge badge-' + currentUser.rol + '">' + currentUser.rol.toUpperCase() + '</span>' +
         '</div>' +
         '<p style="color:var(--text-secondary); margin-bottom: 16px;">' +
           'Sesión iniciada como <strong>' + escapeHtml(currentUser.nombre) + '</strong> (@' + escapeHtml(currentUser.username) + '). El sistema se encuentra sincronizado con almacenamiento local verificado.' +
@@ -499,7 +499,7 @@
           '</button>' +
         '</div>' +
         '<p style="color:var(--text-secondary); margin-bottom:16px;">' +
-          'El correo electrónico es la identidad del usuario: al iniciar sesión con Google, el rol se asigna a partir de esta tabla. Una cuenta que no figure aquí, o que esté inactiva, no obtiene acceso.' +
+          'El correo electrónico es la identidad del usuario. Al iniciar sesión con Google: si el correo ya figura aquí, conserva el rol asignado; si es nuevo, se registra automáticamente como <strong>mesero</strong>; y si está en la lista <code>ADMIN_EMAILS</code> (js/config.js) se eleva a <strong>administrador</strong>. Desactiva una cuenta para revocarle el acceso. El rol nunca se envía desde el formulario de inicio de sesión.' +
         '</p>' +
         '<div class="table-wrap" style="margin-bottom:24px;">' +
           '<table>' +
@@ -1057,6 +1057,12 @@
     var existente = id ? data.usuarios.find(function (u) { return u.id === id; }) : null;
     if (id && !existente) {
       if (window.RestoToast) window.RestoToast.error('El usuario ya no existe.');
+      return;
+    }
+
+    // Un usuario no puede modificar su propio rol (evita autoescalada de privilegios).
+    if (existente && currentUser && existente.email === currentUser.email && rol !== existente.rol) {
+      if (window.RestoToast) window.RestoToast.error('No puedes cambiar tu propio rol.');
       return;
     }
 

@@ -7,6 +7,9 @@
   var clockTimer = null;
   var loginBound = false;
   var dashboardBound = false;
+  var lampOn = false;
+  var audioCtx = null;
+  var LAMP_KEY = 'restoLampOn';
 
   var DOM = {};
 
@@ -41,6 +44,10 @@
     DOM.googleSignInBtn = document.getElementById('googleSignInBtn');
     DOM.googleAuthStatus = document.getElementById('googleAuthStatus');
     DOM.localAccessBlock = document.getElementById('localAccessBlock');
+    DOM.lampSwitch = document.getElementById('lampSwitch');
+    DOM.lockNotice = document.getElementById('lockNotice');
+    DOM.forgotPassLink = document.getElementById('forgotPassLink');
+    DOM.createAccountLink = document.getElementById('createAccountLink');
     DOM.sidebar = document.getElementById('sidebar');
     DOM.sidebarBackdrop = document.getElementById('sidebarBackdrop');
     DOM.menuContainer = document.getElementById('menuContainer');
@@ -252,9 +259,113 @@
     renderSession();
   }
 
+  function playSwitchSound() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended' && audioCtx.resume) audioCtx.resume();
+
+      var now = audioCtx.currentTime;
+      var osc = audioCtx.createOscillator();
+      var gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(200, now);
+      osc.frequency.exponentialRampToValueAtTime(85, now + 0.06);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.07, now + 0.005);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    } catch (e) {
+      /* El navegador bloqueó el audio: la funcionalidad continúa igual. */
+    }
+  }
+
+  function setLoginControlsEnabled(enabled) {
+    var controls = [
+      DOM.loginUser, DOM.loginPass, DOM.togglePassword, DOM.submitBtn,
+      DOM.forgotPassLink, DOM.createAccountLink
+    ];
+    controls.forEach(function (el) {
+      if (el) el.disabled = !enabled;
+    });
+    document.querySelectorAll('.role-pill-btn').forEach(function (el) {
+      el.disabled = !enabled;
+    });
+    if (DOM.googleSignInBtn) {
+      if (enabled) DOM.googleSignInBtn.removeAttribute('inert');
+      else DOM.googleSignInBtn.setAttribute('inert', '');
+    }
+  }
+
+  function applyLampState(userTriggered) {
+    if (DOM.loginView) DOM.loginView.classList.toggle('is-locked', !lampOn);
+    setLoginControlsEnabled(lampOn);
+
+    if (DOM.lampSwitch) {
+      DOM.lampSwitch.setAttribute('aria-pressed', lampOn ? 'true' : 'false');
+      DOM.lampSwitch.setAttribute(
+        'aria-label',
+        lampOn ? 'Apagar la lámpara' : 'Encender la lámpara para desbloquear el acceso'
+      );
+    }
+
+    try {
+      window.sessionStorage.setItem(LAMP_KEY, lampOn ? '1' : '0');
+    } catch (e) {
+      /* sessionStorage no disponible: el estado vive solo en memoria. */
+    }
+
+    if (!userTriggered) return;
+
+    playSwitchSound();
+
+    if (DOM.lampSwitch) {
+      DOM.lampSwitch.classList.remove('tugging');
+      void DOM.lampSwitch.offsetWidth;
+      DOM.lampSwitch.classList.add('tugging');
+      window.setTimeout(function () {
+        if (DOM.lampSwitch) DOM.lampSwitch.classList.remove('tugging');
+      }, 480);
+    }
+
+    if (lampOn) {
+      if (window.RestoToast) window.RestoToast.info('Lámpara encendida · acceso desbloqueado', 2200);
+      window.setTimeout(function () {
+        try { if (DOM.loginUser) DOM.loginUser.focus(); } catch (e) {}
+      }, 220);
+    }
+  }
+
   function bindLoginView() {
     if (loginBound) return;
     loginBound = true;
+
+    if (DOM.lampSwitch) {
+      DOM.lampSwitch.addEventListener('click', function () {
+        lampOn = !lampOn;
+        applyLampState(true);
+      });
+    }
+
+    if (DOM.forgotPassLink) {
+      DOM.forgotPassLink.addEventListener('click', function () {
+        if (window.RestoToast) {
+          window.RestoToast.info('Las cuentas reales se gestionan con Google. Para la demo, usa el panel de Acceso Rápido de Prueba.', 6000);
+        }
+      });
+    }
+
+    if (DOM.createAccountLink) {
+      DOM.createAccountLink.addEventListener('click', function () {
+        if (window.RestoToast) {
+          window.RestoToast.info('Tu cuenta se crea automáticamente al iniciar sesión con Google por primera vez.', 6000);
+        }
+      });
+    }
 
     if (DOM.togglePassword && DOM.loginPass) {
       DOM.togglePassword.addEventListener('click', function () {
@@ -301,6 +412,15 @@
 
     var localEnabled = window.RestoAuth.isLocalAccessEnabled();
     if (DOM.localAccessBlock) DOM.localAccessBlock.hidden = !localEnabled;
+
+    var remembered = false;
+    try {
+      remembered = window.sessionStorage.getItem(LAMP_KEY) === '1';
+    } catch (e) {
+      remembered = false;
+    }
+    lampOn = remembered;
+    applyLampState(false);
 
     bindLoginView();
   }

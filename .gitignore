@@ -1,0 +1,12 @@
+# Configuración local con la lista de administradores autorizados.
+# Copia js/config.example.js a js/config.js y edita ADMIN_EMAILS.
+# Este archivo NO se versiona para no publicar correos personales en el repo.
+# Si necesitas que ADMIN_EMAILS funcione en GitHub Pages, elimina la línea
+# siguiente y haz commit de js/config.js (una lista de correos no es un secreto),
+# o pega el array directamente en js/auth.js.
+js/config.js
+
+# Artefactos de sistema / editor
+.DS_Store
+Thumbs.db
+*.log

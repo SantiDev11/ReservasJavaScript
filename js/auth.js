@@ -7,6 +7,7 @@
   if (!window.CONFIG.CLIENT_ID) window.CONFIG.CLIENT_ID = '318769083991-5hph7d98999ijj3br1l20p2pdd4d6but.apps.googleusercontent.com';
   if (!window.CONFIG.GIS_SRC) window.CONFIG.GIS_SRC = 'https://accounts.google.com/gsi/client';
   if (!window.CONFIG.TOKENINFO_URL) window.CONFIG.TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
+  if (!Array.isArray(window.CONFIG.ADMIN_EMAILS)) window.CONFIG.ADMIN_EMAILS = [];
   window.CONFIG.PLACEHOLDER_CLIENT_ID = PLACEHOLDER_CLIENT_ID;
 
   var CONFIG = window.CONFIG;
@@ -29,6 +30,24 @@
 
   var denialHandler = null;
   var signInHandler = null;
+
+  // --- Lista blanca de administradores (js/config.js -> CONFIG.ADMIN_EMAILS) ---
+  // El rol "administrador" para cuentas de Google se decide EXCLUSIVAMENTE aquí,
+  // en backend de validación. El frontend nunca puede enviar role=ADMIN.
+  function getAdminEmails() {
+    var list = Array.isArray(CONFIG.ADMIN_EMAILS) ? CONFIG.ADMIN_EMAILS : [];
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var email = Storage.normalizeEmail(list[i]);
+      if (Storage.isValidEmail(email) && out.indexOf(email) === -1) out.push(email);
+    }
+    return out;
+  }
+
+  function isAdminEmail(email) {
+    var target = Storage.normalizeEmail(email);
+    return !!target && getAdminEmails().indexOf(target) !== -1;
+  }
 
   function setDenialHandler(handler) {
     denialHandler = typeof handler === 'function' ? handler : null;
@@ -64,6 +83,16 @@
     if (!target) return null;
     var matches = getDirectory().filter(function (usuario) {
       return usuario.email === target && usuario.activo;
+    });
+    return matches.length ? matches[0] : null;
+  }
+
+  // Igual que findDirectoryUser pero incluye cuentas desactivadas (para el alta/upsert).
+  function findDirectoryRow(email) {
+    var target = Storage.normalizeEmail(email);
+    if (!target) return null;
+    var matches = getDirectory().filter(function (usuario) {
+      return usuario.email === target;
     });
     return matches.length ? matches[0] : null;
   }
@@ -206,18 +235,49 @@
       });
   }
 
-  function autoRegisterGoogleUser(email, nombre) {
+  // Alta o reconciliación de una cuenta de Google en el directorio local.
+  //  - Cuenta nueva            -> se crea con rol "administrador" si el correo
+  //                              está en CONFIG.ADMIN_EMAILS; si no, "mesero".
+  //  - Cuenta ya existente     -> conserva su rol actual. Solo se SUBE a
+  //                              "administrador" si el correo está autorizado;
+  //                              nunca se degrada automáticamente aquí.
+  //  - Cuenta desactivada      -> solo se reactiva si el correo está autorizado
+  //                              (los correos no autorizados se rechazan antes).
+  function upsertGoogleUser(email, nombre, existingRow) {
+    var normalized = Storage.normalizeEmail(email);
+    var wantsAdmin = isAdminEmail(normalized);
     var currentData = Storage.load();
-    var newUser = {
-      id: Storage.nextId(currentData.usuarios, 1),
-      email: Storage.normalizeEmail(email),
-      nombre: Storage.sanitizeInput(nombre) || email.split('@')[0],
-      rol: 'mesero',
-      activo: true
-    };
-    currentData.usuarios.push(newUser);
-    var result = Storage.save(currentData);
-    return result.ok ? newUser : null;
+
+    if (!existingRow) {
+      var newUser = {
+        id: Storage.nextId(currentData.usuarios, 1),
+        email: normalized,
+        nombre: Storage.sanitizeInput(nombre) || normalized.split('@')[0],
+        rol: wantsAdmin ? 'administrador' : 'mesero',
+        activo: true
+      };
+      currentData.usuarios.push(newUser);
+      var created = Storage.save(currentData);
+      return created.ok ? newUser : null;
+    }
+
+    var needsAdminPromotion = wantsAdmin && existingRow.rol !== 'administrador';
+    var needsReactivation = wantsAdmin && !existingRow.activo;
+    if (!needsAdminPromotion && !needsReactivation) {
+      return existingRow;
+    }
+
+    var target = null;
+    for (var i = 0; i < currentData.usuarios.length; i++) {
+      if (currentData.usuarios[i].id === existingRow.id) { target = currentData.usuarios[i]; break; }
+    }
+    if (!target) return existingRow;
+
+    if (needsAdminPromotion) target.rol = 'administrador';
+    if (needsReactivation) target.activo = true;
+
+    var saved = Storage.save(currentData);
+    return saved.ok ? target : existingRow;
   }
 
   function buildGoogleSession(idToken, claims, profile) {
@@ -249,13 +309,15 @@
         throw new Error('Verificación fallida: ' + remoteCheck.reason);
       }
 
-      var usuario = findDirectoryUser(info.email);
-      if (!usuario) {
-        var googleName = (claims && claims.name) || (info && info.name) || info.email.split('@')[0];
-        usuario = autoRegisterGoogleUser(info.email, googleName);
-        if (!usuario) {
-          throw new Error('No se pudo registrar la cuenta ' + info.email + ' en el sistema.');
-        }
+      var row = findDirectoryRow(info.email);
+      if (row && !row.activo && !isAdminEmail(info.email)) {
+        throw new Error('La cuenta ' + info.email + ' está desactivada. Contacta al administrador.');
+      }
+
+      var googleName = (claims && claims.name) || (info && info.name) || info.email.split('@')[0];
+      var usuario = upsertGoogleUser(info.email, googleName, row);
+      if (!usuario || !usuario.activo) {
+        throw new Error('No se pudo habilitar la cuenta ' + info.email + ' en el sistema.');
       }
 
       var picture = (claims && claims.picture) || (info && info.picture) || '';
@@ -350,14 +412,19 @@
           gisInitialized = true;
         }
 
-        window.google.accounts.id.renderButton(container, {
+        var desiredWidth = Math.round(container.getBoundingClientRect().width);
+        var buttonOpts = {
           theme: 'filled_black',
           size: 'large',
           shape: 'pill',
           text: 'signin_with',
-          width: 320,
           logo_alignment: 'left'
-        });
+        };
+        // width solo si cabe en el contenedor (evita desbordes en móvil).
+        if (isFinite(desiredWidth) && desiredWidth >= 200) {
+          buttonOpts.width = Math.min(desiredWidth, 360);
+        }
+        window.google.accounts.id.renderButton(container, buttonOpts);
         return { ready: true, reason: null };
       }).catch(function (error) {
         return { ready: false, reason: error.message };
@@ -522,6 +589,7 @@
     PROVIDER_LOCAL: PROVIDER_LOCAL,
     isGoogleConfigured: isClientIdConfigured,
     isLocalAccessEnabled: isLocalAccessEnabled,
+    isAdminEmail: isAdminEmail,
     parseJwt: parseJwt,
     validateJwtClaims: validateJwtClaims,
     getCurrentUser: getCurrentUser,

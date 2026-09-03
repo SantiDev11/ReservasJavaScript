@@ -1471,3 +1471,426 @@ button.sidebar-backdrop {
   cursor: pointer;
 }
 
+/* ============================================================
+   LÁMPARA DE ACCESO · La lámpara es el interruptor del login
+   ============================================================ */
+
+#loginView {
+  --lamp-warm: #fff4c2;
+  --gold: #f5c842;
+  --gold-hover: #ffd95a;
+  --gold-deep: #e0ae2e;
+  --login-bg-dark: #0b0d12;
+  --login-bg-warm: #15171b;
+  gap: clamp(20px, 6vw, 72px);
+  padding: 32px 20px;
+  transition: background 0.8s ease;
+}
+
+#loginView.is-locked {
+  background: radial-gradient(circle at 50% 20%, #1a1d24 0%, var(--login-bg-dark) 72%);
+}
+
+#loginView:not(.is-locked) {
+  background: radial-gradient(circle at 50% 16%, #2b2318 0%, var(--login-bg-warm) 60%);
+}
+
+/* --- Escenario de la lámpara --- */
+.lamp-stage {
+  position: relative;
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 240px;
+  min-height: 460px;
+  overflow: visible;
+}
+
+.lamp {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 100%;
+  pointer-events: none;
+}
+
+.lamp span {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.lamp-cable {
+  top: 0;
+  width: 3px;
+  height: 120px;
+  background: linear-gradient(#3a3f47, #24272c);
+  z-index: 1;
+}
+
+.lamp-canopy {
+  top: -4px;
+  width: 44px;
+  height: 12px;
+  border-radius: 0 0 9px 9px;
+  background: linear-gradient(#3a3f47, #24272c);
+  z-index: 1;
+}
+
+.lamp-shade {
+  top: 108px;
+  width: 168px;
+  height: 96px;
+  background: linear-gradient(165deg, #454b54 0%, #2b2f36 60%, #212429 100%);
+  clip-path: polygon(24% 0%, 76% 0%, 100% 76%, 90% 100%, 10% 100%, 0% 76%);
+  box-shadow: inset 0 -14px 22px rgba(0, 0, 0, 0.55);
+  z-index: 3;
+}
+
+.lamp-shade::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  width: 96px;
+  height: 8px;
+  border-radius: 50%;
+  background: #16181c;
+}
+
+.lamp-filament {
+  top: 186px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 35%, #565b63, #2a2d33 70%);
+  z-index: 2;
+  transition: background 0.8s ease, box-shadow 0.8s ease;
+}
+
+.lamp-orb {
+  top: 118px;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 194, 0.55) 0%, rgba(245, 200, 66, 0.18) 34%, transparent 70%);
+  filter: blur(14px);
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 0.9s ease;
+}
+
+.lamp-beam {
+  top: 196px;
+  width: 240px;
+  height: 380px;
+  background: linear-gradient(180deg, rgba(255, 244, 194, 0.3) 0%, rgba(255, 244, 194, 0.05) 55%, transparent 82%);
+  clip-path: polygon(40% 0%, 60% 0%, 100% 100%, 0% 100%);
+  filter: blur(7px);
+  opacity: 0;
+  z-index: 0;
+  transition: opacity 0.9s ease;
+}
+
+/* --- Interruptor / cordón (botón real, accesible por teclado) --- */
+.lamp-switch {
+  position: absolute;
+  top: 150px;
+  right: 22px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-width: 44px;
+  min-height: 96px;
+  padding: 6px 14px;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.lamp-switch-cord {
+  width: 2px;
+  height: 64px;
+  border-radius: 2px;
+  background: linear-gradient(#9ca3af, #6b7280);
+  transition: height var(--transition-fast);
+}
+
+.lamp-switch-knob {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, var(--gold-hover), var(--gold) 70%);
+  box-shadow: 0 0 10px rgba(245, 200, 66, 0.45);
+}
+
+.lamp-switch:hover .lamp-switch-cord,
+.lamp-switch:focus-visible .lamp-switch-cord {
+  height: 72px;
+}
+
+.lamp-switch:hover .lamp-switch-knob {
+  box-shadow: 0 0 16px rgba(255, 217, 90, 0.7);
+}
+
+.lamp-switch:focus-visible {
+  outline: 2px solid var(--gold-hover);
+  outline-offset: 4px;
+}
+
+.lamp-switch.tugging {
+  animation: cordTug 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#loginView.is-locked .lamp-switch::after {
+  content: "Tira del cordón";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #ffe9a8;
+}
+
+#loginView.is-locked .lamp-switch-knob {
+  animation: knobBob 1.6s ease-in-out infinite;
+}
+
+/* --- Estado ENCENDIDO --- */
+#loginView:not(.is-locked) .lamp-filament {
+  background: radial-gradient(circle at 40% 35%, #ffffff, var(--lamp-warm) 42%, var(--gold) 78%);
+  box-shadow: 0 0 22px 7px rgba(255, 244, 194, 0.8), 0 0 66px 20px rgba(245, 200, 66, 0.4);
+  animation: filamentOn 0.6s ease-out;
+}
+
+#loginView:not(.is-locked) .lamp-orb,
+#loginView:not(.is-locked) .lamp-beam {
+  opacity: 1;
+}
+
+#loginView.is-locked .login-bg-glow {
+  opacity: 0.05;
+}
+
+/* --- Tarjeta: bloqueada vs activa --- */
+.login-card {
+  transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+}
+
+#loginView.is-locked .login-card {
+  opacity: 0.5;
+  filter: saturate(0.55) brightness(0.7);
+  transform: scale(0.985);
+}
+
+#loginView:not(.is-locked) .login-brand,
+#loginView:not(.is-locked) #googleSignInBtn,
+#loginView:not(.is-locked) #localAccessBlock,
+#loginView:not(.is-locked) .login-footer-info {
+  animation: cardChildIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+#loginView:not(.is-locked) .login-brand { animation-delay: 0.04s; }
+#loginView:not(.is-locked) #googleSignInBtn { animation-delay: 0.12s; }
+#loginView:not(.is-locked) #localAccessBlock { animation-delay: 0.2s; }
+#loginView:not(.is-locked) .login-footer-info { animation-delay: 0.28s; }
+
+/* --- Aviso de bloqueo (sin alert()) --- */
+.login-lock-notice {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(245, 200, 66, 0.35);
+  background: rgba(245, 200, 66, 0.08);
+  color: #ffe9a8;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+#loginView.is-locked .login-lock-notice {
+  display: flex;
+}
+
+.login-lock-notice i {
+  color: var(--gold);
+}
+
+#loginView.is-locked .login-lock-notice i {
+  animation: lockPulse 1.8s ease-in-out infinite;
+}
+
+/* --- Controles deshabilitados mientras la lámpara está apagada --- */
+#loginView .form-control:disabled,
+#loginView .btn:disabled,
+#loginView .toggle-password:disabled,
+#loginView .role-pill-btn:disabled,
+#loginView .login-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+#loginView.is-locked #googleSignInBtn {
+  opacity: 0.5;
+  filter: grayscale(0.4);
+}
+
+#googleSignInBtn[inert] {
+  pointer-events: none;
+}
+
+#googleSignInBtn {
+  width: 100%;
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+/* --- Botón dorado (paleta de referencia) --- */
+#loginView .login-btn-submit {
+  background: linear-gradient(135deg, var(--gold) 0%, var(--gold-deep) 100%);
+  color: #1c1200;
+  box-shadow: 0 10px 30px rgba(245, 200, 66, 0.3);
+}
+
+#loginView .login-btn-submit:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--gold-hover) 0%, var(--gold) 100%);
+  box-shadow: 0 12px 36px rgba(255, 217, 90, 0.45);
+  filter: none;
+}
+
+/* --- Enlaces auxiliares --- */
+.login-aux-links {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.login-link {
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  color: #94a3b8;
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+
+.login-link:hover:not(:disabled) {
+  color: var(--gold-hover);
+  text-decoration: underline;
+}
+
+/* --- Animaciones --- */
+@keyframes cordTug {
+  0% { transform: translateY(0); }
+  35% { transform: translateY(11px); }
+  70% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes knobBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes filamentOn {
+  0% { opacity: 0.55; }
+  20% { opacity: 1; }
+  38% { opacity: 0.72; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+@keyframes cardChildIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes lockPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* --- Responsive: lámpara y login se apilan --- */
+@media (max-width: 900px) {
+  #loginView {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .lamp-stage {
+    align-self: auto;
+    width: 200px;
+    min-height: 0;
+    height: 196px;
+  }
+
+  .lamp {
+    transform: translateX(-50%) scale(0.64);
+    transform-origin: top center;
+  }
+
+  .lamp-switch {
+    top: 92px;
+    right: 4px;
+    transform: scale(0.82);
+  }
+
+  .lamp-switch.tugging {
+    animation-name: cordTugSm;
+  }
+}
+
+@keyframes cordTugSm {
+  0% { transform: scale(0.82) translateY(0); }
+  35% { transform: scale(0.82) translateY(13px); }
+  70% { transform: scale(0.82) translateY(-4px); }
+  100% { transform: scale(0.82) translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .lamp-stage {
+    width: 170px;
+    height: 172px;
+  }
+
+  .lamp {
+    transform: translateX(-50%) scale(0.55);
+  }
+
+  .login-aux-links {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+}
+
+/* --- Respeta prefers-reduced-motion --- */
+@media (prefers-reduced-motion: reduce) {
+  #loginView,
+  #loginView *,
+  .lamp,
+  .lamp * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+

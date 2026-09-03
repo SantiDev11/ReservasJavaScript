@@ -19,15 +19,21 @@ RestoApp es una aplicación web de página única (SPA) desarrollada con **HTML,
 
 ```
 sistema-reservas-restaurante/
-├── index.html          # Estructura principal (login + dashboard + modal)
+├── index.html            # Estructura principal (login + lámpara + dashboard + modal)
 ├── css/
-│   └── styles.css      # Diseño responsive, variables CSS y componentes visuales
-└── js/
-    ├── storage.js      # Persistencia en localStorage con validación e integridad
-    ├── auth.js         # Autenticación (Google Identity Services + acceso local demo)
-    ├── modules.js      # Lógica de negocio, vistas y formularios por módulo
-    └── app.js          # Controlador principal, enrutamiento y eventos globales
+│   └── styles.css        # Diseño responsive, variables CSS, componentes y animación de la lámpara
+├── js/
+│   ├── config.example.js # Plantilla de configuración local (ADMIN_EMAILS)
+│   ├── config.js         # Configuración local real — NO versionado (.gitignore)
+│   ├── storage.js        # Persistencia en localStorage con validación e integridad
+│   ├── auth.js           # Autenticación (Google Identity Services + acceso local demo)
+│   ├── modules.js        # Lógica de negocio, vistas y formularios por módulo
+│   └── app.js            # Controlador principal, enrutamiento, eventos y lámpara de acceso
+└── .gitignore
 ```
+
+> `js/config.js` se carga **antes** que el resto de scripts. Si no existe (por ejemplo
+> en un clon recién hecho) la aplicación sigue funcionando: `ADMIN_EMAILS` queda vacío.
 
 ---
 
@@ -89,21 +95,68 @@ RESERVA → PEDIDO → COCINA → PLATO EN PREPARACIÓN → PLATO LISTO → DESP
 
 ---
 
+## 💡 Lámpara de acceso (la lámpara es el interruptor del login)
+
+Al abrir la página el login está **bloqueado**: pantalla oscura, tarjeta atenuada,
+campos y botones deshabilitados, y el aviso *«Enciende la lámpara para continuar»*.
+
+El usuario **tira del cordón** (clic o, con el teclado, `Tab` hasta el interruptor y
+`Enter`/`Espacio`). La lámpara se enciende de forma progresiva, el ambiente se ilumina
+con luz cálida, la tarjeta cobra vida y se habilitan todos los controles.
+
+- El estado *encendida* se recuerda durante la sesión (`sessionStorage`): recargar tras
+  desbloquear no vuelve a bloquear. Una pestaña nueva empieza de nuevo bloqueada.
+- Sonido de interruptor opcional vía Web Audio API; si el navegador lo bloquea, el flujo
+  continúa sin interrupción.
+- Respeta `prefers-reduced-motion`: sin desplazamientos ni parpadeos, pero totalmente funcional.
+
+---
+
 ## 🔐 Autenticación
+
+> **Nota de arquitectura.** Es una SPA **estática** (GitHub Pages), sin backend propio.
+> No hay cookies `HttpOnly`, tokens CSRF ni endpoints de servidor: no son posibles aquí.
+> La frontera de confianza es la capa de validación de `js/storage.js` + `js/auth.js`,
+> que sella los datos con una huella de integridad y **re-deriva el rol del directorio
+> sellado en cada comprobación**. La sesión solo guarda proveedor + correo + token; el
+> frontend nunca envía el rol. Es lo máximo que puede garantizar un sitio sin servidor.
 
 ### Acceso Local (Demo)
 
-Habilitado automáticamente cuando no se configura un Client ID de Google. Permite evaluar toda la funcionalidad del sistema con las credenciales demo.
+Siempre habilitado. Permite evaluar toda la funcionalidad con las credenciales demo
+(ver más abajo) mediante el formulario o el panel de *Acceso Rápido de Prueba*.
 
 ### Google Identity Services (Producción)
 
-Para habilitar el inicio de sesión con cuentas reales de Google:
+El **Client ID** ya está configurado en `js/auth.js` (`CONFIG.CLIENT_ID`). El flujo
+ID-token de GIS **no usa client secret**, así que no hay ninguna credencial que ocultar.
+Para usarlo con tu propio proyecto de Google:
 
 1. Crear un proyecto en [Google Cloud Console](https://console.cloud.google.com/).
-2. Obtener un **Client ID** de tipo OAuth 2.0.
-3. Configurar los orígenes autorizados de JavaScript (ej. `http://localhost:5500`).
-4. Reemplazar el valor de `PLACEHOLDER_CLIENT_ID` en `js/auth.js` con el Client ID real.
-5. Registrar los correos de los usuarios en la tabla de Usuarios del sistema desde la vista de Administración.
+2. Crear un **ID de cliente OAuth 2.0** de tipo *Aplicación web*.
+3. En **Orígenes de JavaScript autorizados** añadir el origen donde sirves la app
+   (ej. `http://localhost:5501` en desarrollo y `https://<usuario>.github.io` en Pages).
+4. Poner ese Client ID en `js/config.js` (`window.CONFIG.CLIENT_ID = '...'`) o en `js/auth.js`.
+
+### Administradores autorizados (`ADMIN_EMAILS`)
+
+1. Copia `js/config.example.js` a **`js/config.js`**.
+2. Escribe tu correo de Google en el array:
+
+   ```js
+   window.CONFIG.ADMIN_EMAILS = ['tu-correo@gmail.com'];
+   ```
+
+3. Al iniciar sesión con Google, ese correo recibe el rol **`administrador`**.
+   Cualquier otro correo nuevo entra como **`mesero`**; un correo que ya exista en la
+   tabla de Usuarios conserva el rol que tenga asignado.
+
+**Importante:** `js/config.js` está en `.gitignore` para no publicar tu correo. En
+GitHub Pages solo se despliega lo versionado, así que para que `ADMIN_EMAILS` tenga
+efecto en Pages debes **quitar `js/config.js` del `.gitignore` y hacer commit** (una
+lista de correos no es un secreto) o pegar el array directamente en `js/auth.js`.
+El rol `administrador` se asigna **solo en `js/auth.js`**; el formulario de login no
+puede enviar `role=ADMIN` y un usuario no puede cambiar su propio rol.
 
 ---
 
