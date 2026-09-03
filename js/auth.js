@@ -52,7 +52,7 @@
   }
 
   function isLocalAccessEnabled() {
-    return !isClientIdConfigured();
+    return true;
   }
 
   function getDirectory() {
