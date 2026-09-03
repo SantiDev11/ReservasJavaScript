@@ -11,25 +11,25 @@
 </head>
 <body class="login-body">
 
-  <div id="loginView">
+  <section id="loginView" aria-label="Pantalla de Inicio de Sesión">
     <div class="login-bg-glow login-bg-glow-1"></div>
     <div class="login-bg-glow login-bg-glow-2"></div>
     <div class="login-bg-glow login-bg-glow-3"></div>
 
     <main class="login-card" id="loginCard">
-      <div class="login-brand">
+      <header class="login-brand">
         <div class="login-logo-icon">
           <i class="fas fa-utensils"></i>
         </div>
         <h1>Resto<span>App</span></h1>
         <p>Sistema Integral de Reservas &amp; Operaciones</p>
-      </div>
+      </header>
 
       <div id="googleSignInBtn" class="google-auth-container"></div>
 
       <div id="googleAuthStatus" class="google-auth-status" style="display:none;"></div>
 
-      <div id="localAccessBlock">
+      <section id="localAccessBlock" aria-label="Acceso con credenciales locales">
         <div class="login-divider">
           <span>O CON CREDENCIALES</span>
         </div>
@@ -95,29 +95,29 @@
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div class="login-footer-info">
+      <footer class="login-footer-info">
         <i class="fas fa-shield-alt"></i>
         <span>Sesión validada en cada operación y control de acceso por roles</span>
-      </div>
+      </footer>
     </main>
-  </div>
+  </section>
 
-  <div id="dashboardView" hidden>
+  <section id="dashboardView" aria-label="Panel Principal" hidden>
     <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
+      <header class="sidebar-header">
         <div class="sidebar-logo-icon">
           <i class="fas fa-utensils"></i>
         </div>
         <h2>Resto<span>App</span></h2>
-      </div>
+      </header>
 
       <nav class="sidebar-menu" id="menuContainer" aria-label="Menú principal"></nav>
 
-      <div class="sidebar-footer">
+      <footer class="sidebar-footer">
         <div class="user-profile-widget">
           <div class="user-avatar" id="userAvatarDisplay">A</div>
           <div class="user-details">
@@ -129,7 +129,7 @@
           <i class="fas fa-sign-out-alt"></i>
           <span>Cerrar Sesión</span>
         </button>
-      </div>
+      </footer>
     </aside>
 
     <div class="main-content">
@@ -161,7 +161,7 @@
         <div id="modalBody"></div>
       </div>
     </div>
-  </div>
+  </section>
 
   <script src="js/storage.js"></script>
   <script src="js/auth.js"></script>
