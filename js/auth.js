@@ -1,10 +1,10 @@
 (function (window) {
   'use strict';
 
-  var PLACEHOLDER_CLIENT_ID = '318769083991-5hph7d98999ijj3br1l20p2pdd4d6but.apps.googleusercontent.com';
+  var PLACEHOLDER_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com';
 
   window.CONFIG = window.CONFIG || {};
-  if (!window.CONFIG.CLIENT_ID) window.CONFIG.CLIENT_ID = PLACEHOLDER_CLIENT_ID;
+  if (!window.CONFIG.CLIENT_ID) window.CONFIG.CLIENT_ID = '318769083991-5hph7d98999ijj3br1l20p2pdd4d6but.apps.googleusercontent.com';
   if (!window.CONFIG.GIS_SRC) window.CONFIG.GIS_SRC = 'https://accounts.google.com/gsi/client';
   if (!window.CONFIG.TOKENINFO_URL) window.CONFIG.TOKENINFO_URL = 'https://oauth2.googleapis.com/tokeninfo';
   window.CONFIG.PLACEHOLDER_CLIENT_ID = PLACEHOLDER_CLIENT_ID;
