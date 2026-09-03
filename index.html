@@ -12,155 +12,159 @@
 <body class="login-body">
 
   <section id="loginView" aria-label="Pantalla de Inicio de Sesión">
-    <div class="login-bg-glow login-bg-glow-1"></div>
-    <div class="login-bg-glow login-bg-glow-2"></div>
-    <div class="login-bg-glow login-bg-glow-3"></div>
+    <span class="login-bg-glow login-bg-glow-1" aria-hidden="true"></span>
+    <span class="login-bg-glow login-bg-glow-2" aria-hidden="true"></span>
+    <span class="login-bg-glow login-bg-glow-3" aria-hidden="true"></span>
 
     <main class="login-card" id="loginCard">
       <header class="login-brand">
-        <div class="login-logo-icon">
+        <figure class="login-logo-icon" aria-hidden="true">
           <i class="fas fa-utensils"></i>
-        </div>
+        </figure>
         <h1>Resto<span>App</span></h1>
         <p>Sistema Integral de Reservas &amp; Operaciones</p>
       </header>
 
-      <div id="googleSignInBtn" class="google-auth-container"></div>
+      <section id="googleSignInBtn" class="google-auth-container" aria-label="Acceso con Google"></section>
 
-      <div id="googleAuthStatus" class="google-auth-status" style="display:none;"></div>
+      <output id="googleAuthStatus" class="google-auth-status" style="display:none;" role="status" aria-live="polite"></output>
 
       <section id="localAccessBlock" aria-label="Acceso con credenciales locales">
-        <div class="login-divider">
+        <p class="login-divider" role="separator">
           <span>O CON CREDENCIALES</span>
-        </div>
+        </p>
 
         <form id="loginForm" autocomplete="off">
-          <div class="form-group">
-            <label for="loginUser">Usuario o Correo Electrónico</label>
-            <div class="input-wrapper">
-              <input
-                type="text"
-                id="loginUser"
-                class="form-control"
-                placeholder="admin, mesero, cocina, despacho o email"
-                required
-                autocomplete="username"
-              >
-              <i class="fas fa-user input-icon"></i>
-            </div>
-          </div>
+          <fieldset class="login-fieldset">
+            <legend class="sr-only">Credenciales de acceso</legend>
 
-          <div class="form-group">
-            <label for="loginPass">Contraseña</label>
-            <div class="input-wrapper">
-              <input
-                type="password"
-                id="loginPass"
-                class="form-control"
-                placeholder="••••••••"
-                required
-                autocomplete="current-password"
-              >
-              <i class="fas fa-lock input-icon"></i>
-              <button type="button" class="toggle-password" id="togglePassword" title="Mostrar/Ocultar contraseña">
-                <i class="fas fa-eye"></i>
-              </button>
-            </div>
-          </div>
+            <p class="form-group">
+              <label for="loginUser">Usuario o Correo Electrónico</label>
+              <span class="input-wrapper">
+                <input
+                  type="text"
+                  id="loginUser"
+                  class="form-control"
+                  placeholder="admin, mesero, cocina, despacho o email"
+                  required
+                  autocomplete="username"
+                >
+                <i class="fas fa-user input-icon" aria-hidden="true"></i>
+              </span>
+            </p>
 
-          <button type="submit" class="btn btn-primary login-btn-submit" id="submitBtn">
-            <span>Ingresar al Sistema</span>
-            <i class="fas fa-arrow-right"></i>
-          </button>
+            <p class="form-group">
+              <label for="loginPass">Contraseña</label>
+              <span class="input-wrapper">
+                <input
+                  type="password"
+                  id="loginPass"
+                  class="form-control"
+                  placeholder="••••••••"
+                  required
+                  autocomplete="current-password"
+                >
+                <i class="fas fa-lock input-icon" aria-hidden="true"></i>
+                <button type="button" class="toggle-password" id="togglePassword" title="Mostrar/Ocultar contraseña" aria-label="Mostrar u ocultar contraseña">
+                  <i class="fas fa-eye" aria-hidden="true"></i>
+                </button>
+              </span>
+            </p>
+
+            <button type="submit" class="btn btn-primary login-btn-submit" id="submitBtn">
+              <span>Ingresar al Sistema</span>
+              <i class="fas fa-arrow-right" aria-hidden="true"></i>
+            </button>
+          </fieldset>
         </form>
 
-        <div class="role-quick-select">
-          <div class="role-quick-title">Acceso Rápido de Prueba (1-Clic)</div>
-          <div class="role-pills">
+        <section class="role-quick-select" aria-label="Acceso Rápido de Prueba">
+          <h2 class="role-quick-title">Acceso Rápido de Prueba (1-Clic)</h2>
+          <nav class="role-pills" aria-label="Roles de prueba">
             <button type="button" class="role-pill-btn" data-role="admin">
-              <i class="fas fa-user-shield"></i>
+              <i class="fas fa-user-shield" aria-hidden="true"></i>
               <span>Admin</span>
             </button>
             <button type="button" class="role-pill-btn" data-role="mesero">
-              <i class="fas fa-concierge-bell"></i>
+              <i class="fas fa-concierge-bell" aria-hidden="true"></i>
               <span>Mesero</span>
             </button>
             <button type="button" class="role-pill-btn" data-role="cocina">
-              <i class="fas fa-fire-burner"></i>
+              <i class="fas fa-fire-burner" aria-hidden="true"></i>
               <span>Cocina</span>
             </button>
             <button type="button" class="role-pill-btn" data-role="despacho">
-              <i class="fas fa-truck"></i>
+              <i class="fas fa-truck" aria-hidden="true"></i>
               <span>Despacho</span>
             </button>
-          </div>
-        </div>
+          </nav>
+        </section>
       </section>
 
       <footer class="login-footer-info">
-        <i class="fas fa-shield-alt"></i>
+        <i class="fas fa-shield-alt" aria-hidden="true"></i>
         <span>Sesión validada en cada operación y control de acceso por roles</span>
       </footer>
     </main>
   </section>
 
   <section id="dashboardView" aria-label="Panel Principal" hidden>
-    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+    <button type="button" class="sidebar-backdrop" id="sidebarBackdrop" aria-label="Cerrar barra lateral" tabindex="-1"></button>
 
     <aside class="sidebar" id="sidebar">
       <header class="sidebar-header">
-        <div class="sidebar-logo-icon">
+        <figure class="sidebar-logo-icon" aria-hidden="true">
           <i class="fas fa-utensils"></i>
-        </div>
+        </figure>
         <h2>Resto<span>App</span></h2>
       </header>
 
       <nav class="sidebar-menu" id="menuContainer" aria-label="Menú principal"></nav>
 
       <footer class="sidebar-footer">
-        <div class="user-profile-widget">
-          <div class="user-avatar" id="userAvatarDisplay">A</div>
-          <div class="user-details">
-            <div class="user-name" id="userNameDisplay">Usuario</div>
-            <div class="user-role-label" id="userRoleDisplay">Rol</div>
-          </div>
-        </div>
+        <article class="user-profile-widget" aria-label="Perfil de usuario activo">
+          <figure class="user-avatar" id="userAvatarDisplay" aria-hidden="true">A</figure>
+          <section class="user-details">
+            <h3 class="user-name" id="userNameDisplay">Usuario</h3>
+            <p class="user-role-label" id="userRoleDisplay">Rol</p>
+          </section>
+        </article>
         <button class="logout-btn" id="logoutBtn">
-          <i class="fas fa-sign-out-alt"></i>
+          <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
           <span>Cerrar Sesión</span>
         </button>
       </footer>
     </aside>
 
-    <div class="main-content">
+    <section class="main-content" aria-label="Contenido principal">
       <header class="topbar">
-        <div class="topbar-left">
+        <nav class="topbar-left" aria-label="Controles de navegación">
           <button class="hamburger" id="hamburgerBtn" aria-label="Abrir menú lateral">
-            <i class="fas fa-bars"></i>
+            <i class="fas fa-bars" aria-hidden="true"></i>
           </button>
           <h2 id="viewTitle">Panel de Control</h2>
-        </div>
+        </nav>
 
-        <div class="topbar-right">
-          <div class="live-clock">
-            <i class="far fa-clock"></i> <span id="liveClock">--:--</span>
-          </div>
+        <aside class="topbar-right" aria-label="Información y reloj">
+          <time class="live-clock" aria-label="Hora actual">
+            <i class="far fa-clock" aria-hidden="true"></i> <span id="liveClock">--:--</span>
+          </time>
           <span class="badge badge-administrador" id="roleBadge">ADMINISTRADOR</span>
-        </div>
+        </aside>
       </header>
 
-      <main class="page-content" id="pageContent"></main>
-    </div>
+      <main class="page-content" id="pageContent" aria-label="Vista del módulo"></main>
+    </section>
 
-    <div class="modal-overlay" id="modalOverlay">
-      <div class="modal" id="modalContent" role="dialog" aria-modal="true">
-        <div class="modal-header">
+    <aside class="modal-overlay" id="modalOverlay" aria-label="Ventana modal" aria-hidden="true">
+      <dialog class="modal" id="modalContent" role="dialog" aria-modal="true" open aria-labelledby="modalTitle">
+        <header class="modal-header">
           <h3 id="modalTitle">Modal</h3>
           <button class="close-modal" id="modalCloseBtn" aria-label="Cerrar modal">&times;</button>
-        </div>
-        <div id="modalBody"></div>
-      </div>
-    </div>
+        </header>
+        <section id="modalBody" class="modal-body" aria-label="Contenido del diálogo"></section>
+      </dialog>
+    </aside>
   </section>
 
   <script src="js/storage.js"></script>
