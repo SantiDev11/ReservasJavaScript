@@ -10,6 +10,9 @@
   var lampOn = false;
   var audioCtx = null;
   var LAMP_KEY = 'restoLampOn';
+  var LAMP_STORAGE_KEY = 'lampState';
+  var REMEMBER_KEY = 'rememberMe';
+  var REMEMBERED_EMAIL_KEY = 'rememberedEmail';
 
   var DOM = {};
 
@@ -39,6 +42,10 @@
     DOM.loginForm = document.getElementById('loginForm');
     DOM.loginUser = document.getElementById('loginUser');
     DOM.loginPass = document.getElementById('loginPass');
+    DOM.loginUserError = document.getElementById('loginUserError');
+    DOM.loginPassError = document.getElementById('loginPassError');
+    DOM.loginGeneralError = document.getElementById('loginGeneralError');
+    DOM.rememberMe = document.getElementById('rememberMe');
     DOM.togglePassword = document.getElementById('togglePassword');
     DOM.submitBtn = document.getElementById('submitBtn');
     DOM.googleSignInBtn = document.getElementById('googleSignInBtn');
@@ -218,41 +225,123 @@
     });
   }
 
+  function showFieldError(inputEl, errorEl, message) {
+    if (inputEl) {
+      inputEl.classList.add('is-invalid');
+      inputEl.setAttribute('aria-invalid', 'true');
+    }
+    if (errorEl) {
+      errorEl.innerHTML = '<i class="fas fa-circle-exclamation" aria-hidden="true"></i> ' + message;
+      errorEl.classList.add('visible');
+    }
+  }
+
+  function clearFieldError(inputEl, errorEl) {
+    if (inputEl) {
+      inputEl.classList.remove('is-invalid');
+      inputEl.removeAttribute('aria-invalid');
+    }
+    if (errorEl) {
+      errorEl.innerHTML = '';
+      errorEl.classList.remove('visible');
+    }
+    clearGeneralError();
+  }
+
+  function showGeneralError(message) {
+    if (!DOM.loginGeneralError) return;
+    DOM.loginGeneralError.innerHTML = '<i class="fas fa-triangle-exclamation" aria-hidden="true"></i> <span>' + message + '</span>';
+    DOM.loginGeneralError.style.display = 'flex';
+  }
+
+  function clearGeneralError() {
+    if (!DOM.loginGeneralError) return;
+    DOM.loginGeneralError.innerHTML = '';
+    DOM.loginGeneralError.style.display = 'none';
+  }
+
+  function clearAllErrors() {
+    clearFieldError(DOM.loginUser, DOM.loginUserError);
+    clearFieldError(DOM.loginPass, DOM.loginPassError);
+    clearGeneralError();
+  }
+
+  function isValidEmailFormat(email) {
+    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
+  }
+
   function submitLocalLogin() {
-    var username = DOM.loginUser ? DOM.loginUser.value.trim() : '';
-    var password = DOM.loginPass ? DOM.loginPass.value : '';
+    clearAllErrors();
 
-    if (!username) {
-      if (DOM.loginUser) DOM.loginUser.focus();
-      if (window.RestoToast) window.RestoToast.warning('Por favor ingrese su usuario o correo.');
+    var rawUser = DOM.loginUser ? DOM.loginUser.value.trim() : '';
+    var rawPass = DOM.loginPass ? DOM.loginPass.value : '';
+    var hasError = false;
+    var firstInvalid = null;
+
+    // 1. Validación campo correo/usuario
+    if (!rawUser) {
+      showFieldError(DOM.loginUser, DOM.loginUserError, 'El correo es obligatorio');
+      hasError = true;
+      if (!firstInvalid) firstInvalid = DOM.loginUser;
+    } else if (rawUser.indexOf('@') !== -1 && !isValidEmailFormat(rawUser)) {
+      showFieldError(DOM.loginUser, DOM.loginUserError, 'Ingresa un correo válido');
+      hasError = true;
+      if (!firstInvalid) firstInvalid = DOM.loginUser;
+    }
+
+    // 2. Validación campo contraseña
+    if (!rawPass) {
+      showFieldError(DOM.loginPass, DOM.loginPassError, 'La contraseña es obligatoria');
+      hasError = true;
+      if (!firstInvalid) firstInvalid = DOM.loginPass;
+    } else if (rawPass.length < 8) {
+      showFieldError(DOM.loginPass, DOM.loginPassError, 'La contraseña debe tener mínimo 8 caracteres');
+      hasError = true;
+      if (!firstInvalid) firstInvalid = DOM.loginPass;
+    }
+
+    // El formulario NO debe enviarse si existen errores. Sin alert().
+    if (hasError) {
+      if (firstInvalid) firstInvalid.focus();
       return;
     }
 
-    if (!password) {
-      if (DOM.loginPass) DOM.loginPass.focus();
-      if (window.RestoToast) window.RestoToast.warning('Por favor ingrese su contraseña.');
-      return;
-    }
-
+    // Estado "Mientras valida": Botón "Iniciando sesión..."
     var originalBtnText = DOM.submitBtn ? DOM.submitBtn.innerHTML : '';
     if (DOM.submitBtn) {
       DOM.submitBtn.disabled = true;
-      DOM.submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validando...';
+      DOM.submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" aria-hidden="true"></i> Iniciando sesión...';
     }
 
-    var result = window.RestoAuth.login(username, password);
+    // Validación Backend
+    var result = window.RestoAuth.login(rawUser, rawPass);
 
     if (DOM.submitBtn) {
-      DOM.submitBtn.disabled = false;
+      DOM.submitBtn.disabled = !lampOn;
       DOM.submitBtn.innerHTML = originalBtnText;
     }
 
     if (!result.success) {
+      showGeneralError(result.error || 'Credenciales incorrectas');
       if (window.RestoToast) window.RestoToast.error(result.error);
       return;
     }
 
+    // LocalStorage: Guardar únicamente el correo si "Recordarme" está activado
+    try {
+      if (DOM.rememberMe && DOM.rememberMe.checked) {
+        window.localStorage.setItem(REMEMBER_KEY, 'true');
+        window.localStorage.setItem(REMEMBERED_EMAIL_KEY, rawUser);
+      } else {
+        window.localStorage.removeItem(REMEMBER_KEY);
+        window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
+    } catch (e) {
+      /* localStorage restringido por el navegador */
+    }
+
     if (DOM.loginPass) DOM.loginPass.value = '';
+    clearAllErrors();
     if (window.RestoToast) {
       window.RestoToast.success('¡Bienvenido ' + result.user.nombre + '!');
     }
@@ -287,7 +376,7 @@
   function setLoginControlsEnabled(enabled) {
     var controls = [
       DOM.loginUser, DOM.loginPass, DOM.togglePassword, DOM.submitBtn,
-      DOM.forgotPassLink, DOM.createAccountLink
+      DOM.forgotPassLink, DOM.createAccountLink, DOM.rememberMe
     ];
     controls.forEach(function (el) {
       if (el) el.disabled = !enabled;
@@ -314,9 +403,10 @@
     }
 
     try {
+      window.localStorage.setItem(LAMP_STORAGE_KEY, lampOn ? 'on' : 'off');
       window.sessionStorage.setItem(LAMP_KEY, lampOn ? '1' : '0');
     } catch (e) {
-      /* sessionStorage no disponible: el estado vive solo en memoria. */
+      /* almacenamiento no disponible: el estado vive solo en memoria. */
     }
 
     if (!userTriggered) return;
@@ -376,6 +466,30 @@
       });
     }
 
+    // Limpieza de error en tiempo real cuando el usuario corrige el campo
+    if (DOM.loginUser) {
+      DOM.loginUser.addEventListener('input', function () {
+        clearFieldError(DOM.loginUser, DOM.loginUserError);
+      });
+    }
+
+    if (DOM.loginPass) {
+      DOM.loginPass.addEventListener('input', function () {
+        clearFieldError(DOM.loginPass, DOM.loginPassError);
+      });
+    }
+
+    if (DOM.rememberMe) {
+      DOM.rememberMe.addEventListener('change', function () {
+        try {
+          if (!DOM.rememberMe.checked) {
+            window.localStorage.removeItem(REMEMBER_KEY);
+            window.localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+          }
+        } catch (e) {}
+      });
+    }
+
     document.querySelectorAll('.role-pill-btn').forEach(function (pill) {
       pill.addEventListener('click', function () {
         document.querySelectorAll('.role-pill-btn').forEach(function (p) { p.classList.remove('active'); });
@@ -385,6 +499,7 @@
         if (!role || !DOM.loginUser || !DOM.loginPass) return;
         DOM.loginUser.value = role;
         DOM.loginPass.value = role + '123';
+        clearAllErrors();
         if (window.RestoToast) {
           window.RestoToast.info('Credenciales demo seleccionadas: ' + role.toUpperCase(), 2000);
         }
@@ -405,6 +520,7 @@
     currentUser = null;
     stopLiveClock();
     window.RestoModules.closeModal();
+    clearAllErrors();
 
     document.body.className = 'login-body';
     if (DOM.dashboardView) DOM.dashboardView.hidden = true;
@@ -413,9 +529,29 @@
     var localEnabled = window.RestoAuth.isLocalAccessEnabled();
     if (DOM.localAccessBlock) DOM.localAccessBlock.hidden = !localEnabled;
 
+    // Recuperar correo recordado de localStorage si la opción Recordarme fue guardada
+    try {
+      var rememberedEmail = window.localStorage.getItem(REMEMBERED_EMAIL_KEY);
+      var rememberMeActive = window.localStorage.getItem(REMEMBER_KEY) === 'true';
+      if (rememberedEmail && DOM.loginUser) {
+        DOM.loginUser.value = rememberedEmail;
+        if (DOM.rememberMe) DOM.rememberMe.checked = true;
+      } else if (DOM.rememberMe) {
+        DOM.rememberMe.checked = rememberMeActive;
+      }
+    } catch (e) {
+      /* localStorage no accesible */
+    }
+
+    // Estado visual de la lámpara en localStorage (con fallback a sessionStorage)
     var remembered = false;
     try {
-      remembered = window.sessionStorage.getItem(LAMP_KEY) === '1';
+      var storedLamp = window.localStorage.getItem(LAMP_STORAGE_KEY);
+      if (storedLamp !== null) {
+        remembered = storedLamp === 'on';
+      } else {
+        remembered = window.sessionStorage.getItem(LAMP_KEY) === '1';
+      }
     } catch (e) {
       remembered = false;
     }
@@ -465,6 +601,10 @@
     if (DOM.logoutBtn) {
       DOM.logoutBtn.addEventListener('click', function () {
         if (!window.confirm('¿Cerrar sesión?')) return;
+        try {
+          window.localStorage.setItem(LAMP_STORAGE_KEY, 'off');
+          window.sessionStorage.setItem(LAMP_KEY, '0');
+        } catch (e) {}
         window.RestoAuth.logout();
         renderSession();
       });

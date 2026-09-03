@@ -511,23 +511,59 @@
       return { success: false, error: 'El acceso local está deshabilitado. Utilice el acceso con Google.' };
     }
 
+    // 1. Datos obligatorios y limpieza
     var entrada = String(identificador === undefined || identificador === null ? '' : identificador).trim();
     var password = String(clave === undefined || clave === null ? '' : clave);
 
-    if (!entrada || !password) {
-      return { success: false, error: 'Por favor complete todos los campos.' };
+    if (!entrada) {
+      return { success: false, error: 'El usuario o correo electrónico es obligatorio.' };
     }
 
-    var email = resolveEmailFromIdentifier(entrada);
-    var usuario = email ? findDirectoryUser(email) : null;
+    if (!password) {
+      return { success: false, error: 'La contraseña es obligatoria.' };
+    }
 
-    if (!usuario || DEMO_ACCESS[usuario.email] !== password) {
+    // 2. Validación de formato de entrada
+    if (entrada.indexOf('@') !== -1) {
+      if (!Storage.isValidEmail(entrada)) {
+        return { success: false, error: 'El formato de correo electrónico ingresado no es válido.' };
+      }
+    } else {
+      if (!/^[a-zA-Z0-9._-]{3,50}$/.test(entrada)) {
+        return { success: false, error: 'El nombre de usuario contiene caracteres no válidos o longitud fuera de rango (3-50).' };
+      }
+    }
+
+    // 3. Validación de longitud de contraseña
+    if (password.length < 8) {
+      return { success: false, error: 'La contraseña debe tener mínimo 8 caracteres.' };
+    }
+
+    // 4. Existencia de usuario y resolución autoritativa
+    var email = resolveEmailFromIdentifier(entrada);
+    var usuarioRow = email ? findDirectoryRow(email) : null;
+
+    if (!usuarioRow) {
       return { success: false, error: 'Usuario o contraseña incorrectos.' };
     }
 
+    // 5. Validación del estado de la cuenta
+    if (!usuarioRow.activo) {
+      return { success: false, error: 'La cuenta está desactivada. Contacta al administrador.' };
+    }
+
+    // 6. Validación de credenciales
+    if (DEMO_ACCESS[usuarioRow.email] !== password) {
+      return { success: false, error: 'Usuario o contraseña incorrectos.' };
+    }
+
+    // 7. Determinación estricta del rol por el backend:
+    // El frontend NO puede enviar role=ADMIN ni modificar el rol asignado.
+    // La sesión almacena únicamente provider, email y expiración.
+    // El rol siempre es derivado del registro del usuario en la base de datos sellada.
     var sessionData = {
       provider: PROVIDER_LOCAL,
-      email: usuario.email,
+      email: usuarioRow.email,
       loginAt: new Date().toISOString(),
       expiresAt: Date.now() + SESSION_TTL
     };
