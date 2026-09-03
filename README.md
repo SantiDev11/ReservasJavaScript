@@ -23,8 +23,6 @@ sistema-reservas-restaurante/
 ├── css/
 │   └── styles.css        # Diseño responsive, variables CSS, componentes y animación de la lámpara
 ├── js/
-│   ├── config.example.js # Plantilla de configuración local (ADMIN_EMAILS)
-│   ├── config.js         # Configuración local real — NO versionado (.gitignore)
 │   ├── storage.js        # Persistencia en localStorage con validación e integridad
 │   ├── auth.js           # Autenticación (Google Identity Services + acceso local demo)
 │   ├── modules.js        # Lógica de negocio, vistas y formularios por módulo
